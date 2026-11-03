@@ -574,11 +574,31 @@ class Stockmovement extends GetView<Stockcnt> {
                           label: const Text("Stock Out"),
 
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepOrange,
+                            backgroundColor: Colors.purple.shade500,
 
                             foregroundColor: Colors.white,
 
-                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            controller.deleteDate();
+                            
+                          },
+                          icon: const Icon(Icons.remove),
+
+                          label: const Text("Delete Data"),
+
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+
+                            foregroundColor: Colors.white,
 
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),

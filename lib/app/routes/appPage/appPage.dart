@@ -7,4 +7,5 @@ abstract class AppRoutes {
   static const analysis = '/analysis';
   static const report = '/report';
   static const homenavbar = '/navbar';
+  static const dashListDetail = '/dashDetail';
 }

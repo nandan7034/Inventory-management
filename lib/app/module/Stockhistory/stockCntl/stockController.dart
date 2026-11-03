@@ -1,79 +1,193 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class StockhistoryController extends GetxController {
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  // Filter
   final selectedFilter = 'All'.obs;
-  final searchText = ''.obs;
 
-  final movements = <Map<String, dynamic>>[
-    {
-      'type': 'Stock In',
-      'item': 'Laptop',
-      'sku': 'SKU-1023',
-      'quantity': 25,
-      'date': '10 Oct 2026',
-      'time': '10:30 AM',
-      'description': 'Supplier delivery',
-    },
-    {
-      'type': 'Stock Out',
-      'item': 'Office Chair',
-      'sku': 'SKU-2041',
-      'quantity': -5,
-      'date': '10 Oct 2026',
-      'time': '09:15 AM',
-      'description': 'Order #1023',
-    },
-    {
-      'type': 'Stock In',
-      'item': 'Keyboard',
-      'sku': 'SKU-3012',
-      'quantity': 15,
-      'date': '09 Oct 2026',
-      'time': '04:20 PM',
-      'description': 'Supplier delivery',
-    },
-    {
-      'type': 'Stock Out',
-      'item': 'Monitor',
-      'sku': 'SKU-4011',
-      'quantity': -8,
-      'date': '09 Oct 2026',
-      'time': '11:00 AM',
-      'description': 'Customer order',
-    },
-  ].obs;
+  // Search
+  final TextEditingController searchText = TextEditingController();
 
+  // Stock movement list
+  final allMovements = <Map<String, dynamic>>[].obs;
+
+  // Loading
+  final loading = false.obs;
+
+  // Total Stock In
+  int get totalIn {
+    return allMovements.where((item) => item['type'] == 'Stock In').fold(0, (
+      sum,
+      item,
+    ) {
+      return sum + ((item['quantity'] as num?)?.toInt() ?? 0).abs();
+    });
+  }
+
+  // Total Stock Out
+  int get totalOut {
+    return allMovements.where((item) => item['type'] == 'Stock Out').fold(0, (
+      sum,
+      item,
+    ) {
+      return sum + ((item['quantity'] as num?)?.toInt() ?? 0).abs();
+    });
+  }
+
+  // Net Stock Movement
+  int get netMovement => totalIn - totalOut;
+
+  // Search and Filter
   List<Map<String, dynamic>> get filteredMovements {
-    return movements.where((movement) {
-      final type = movement['type'].toString();
-      final item = movement['item'].toString().toLowerCase();
-      final sku = movement['sku'].toString().toLowerCase();
-      final query = searchText.value.toLowerCase();
+    final search = searchText.text.trim().toLowerCase();
 
+    return allMovements.where((item) {
       final matchesFilter =
-          selectedFilter.value == 'All' || type == selectedFilter.value;
+          selectedFilter.value == 'All' || item['type'] == selectedFilter.value;
 
-      final matchesSearch = item.contains(query) || sku.contains(query);
+      final itemName = (item['item'] ?? '').toString().toLowerCase();
+
+      final sku = (item['sku'] ?? '').toString().toLowerCase();
+
+      final matchesSearch = itemName.contains(search) || sku.contains(search);
 
       return matchesFilter && matchesSearch;
     }).toList();
   }
 
-  int get totalIn => movements
-      .where((m) => m['type'] == 'Stock In')
-      .fold<int>(0, (sum, m) => sum + (m['quantity'] as int));
+  // Search method
+  void search(String value) {
+    searchText.text = value;
+    allMovements.refresh();
+  }
 
-  int get totalOut => movements
-      .where((m) => m['type'] == 'Stock Out')
-      .fold<int>(0, (sum, m) => sum + (m['quantity'] as int).abs());
-
-  int get netMovement => totalIn - totalOut;
-
+  // Change filter
   void changeFilter(String filter) {
     selectedFilter.value = filter;
   }
 
-  void search(String value) {
-    searchText.value = value;
+  // Convert Firestore date
+  DateTime? getDate(dynamic value) {
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+
+    if (value is DateTime) {
+      return value;
+    }
+
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+
+    return null;
+  }
+
+  // Format date
+  String formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  // Format time
+  String formatTime(DateTime? date) {
+    if (date == null) return '';
+
+    return '${date.hour.toString().padLeft(2, '0')}:'
+        '${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Get Stock History
+  Future<void> getStockHistory() async {
+    try {
+      loading.value = true;
+
+      final List<Map<String, dynamic>> movements = [];
+
+      // -------------------------------
+      // STOCK IN
+      // -------------------------------
+      final receivingResult = await firestore.collection('recivedItems').get();
+
+      for (final doc in receivingResult.docs) {
+        final data = doc.data();
+
+        final quantity = (data['quantity'] as num?)?.toInt() ?? 0;
+
+        final date = getDate(data['receivedDate'] ?? data['date']);
+
+        movements.add({
+          'id': doc.id,
+          'item': data['itemName'] ?? 'Unknown Item',
+          'sku': data['barcode'] ?? data['id'] ?? 'N/A',
+          'description': 'Stock received',
+          'type': 'Stock In',
+          'quantity': quantity.abs(),
+          'date': formatDate(date),
+          'time': formatTime(date),
+          'sortDate': date ?? DateTime(2000),
+        });
+      }
+
+      // -------------------------------
+      // STOCK OUT
+      // -------------------------------
+      final stockOutResult = await firestore.collection('stockMovements').get();
+
+      for (final doc in stockOutResult.docs) {
+        final data = doc.data();
+
+        final quantity = ((data['quantity'] as num?)?.toInt() ?? 0).abs();
+
+        final date = getDate(
+          data['date'] ?? data['createdAt'] ?? data['timestamp'],
+        );
+
+        movements.add({
+          'id': doc.id,
+          'item': data['itemName'] ?? data['item'] ?? 'Unknown Item',
+          'sku': data['barcode'] ?? data['sku'] ?? 'N/A',
+          'description': data['description'] ?? 'Stock issued',
+          'type': 'Stock Out',
+          'quantity': -quantity,
+          'date': formatDate(date),
+          'time': formatTime(date),
+          'sortDate': date ?? DateTime(2000),
+        });
+      }
+
+      // Latest movement first
+      movements.sort((a, b) {
+        return (b['sortDate'] as DateTime).compareTo(a['sortDate'] as DateTime);
+      });
+
+      allMovements.assignAll(movements);
+    } catch (e) {
+      debugPrint('Stock History Error: $e');
+
+      Get.snackbar(
+        'Error',
+        'Unable to load stock history: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    getStockHistory();
+  }
+
+  @override
+  void onClose() {
+    searchText.dispose();
+    super.onClose();
   }
 }

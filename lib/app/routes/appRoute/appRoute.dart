@@ -2,6 +2,8 @@ import 'package:flutter_application_1/app/core/widgets/homenavigation/homenagiva
 import 'package:flutter_application_1/app/core/widgets/homenavigation/homenavbinding.dart';
 import 'package:flutter_application_1/app/module/Additem/binding/additem_binding.dart';
 import 'package:flutter_application_1/app/module/Additem/view/additem.dart';
+import 'package:flutter_application_1/app/module/DashListDet/DashListBinding/DashBind.dart';
+import 'package:flutter_application_1/app/module/DashListDet/view/dashListdetail.dart';
 import 'package:flutter_application_1/app/module/Dashboard/binding/DashBinding.dart';
 import 'package:flutter_application_1/app/module/Dashboard/view/Homescreen.dart';
 import 'package:flutter_application_1/app/module/Login/binding/loginBinding.dart';
@@ -58,6 +60,11 @@ class AppPages {
       name: AppRoutes.stockmovement,
       page: () => const Stockmovement(),
       binding: Stockoutbinding(),
+    ),
+    GetPage(
+      name: AppRoutes.dashListDetail,
+      page: () => DashListDetail(),
+      binding: DashListBind(),
     ),
   ];
 }

@@ -147,10 +147,12 @@ class Dashboard extends GetView<DashCntrl> {
                     ),
                     Expanded(
                       child: _quickAction(
-                        label: "Low Stock",
+                        label: "Stock History",
                         icon: Icons.timelapse_rounded,
                         color: Colors.orange,
-                        onTap: () {},
+                        onTap: () {
+                          Get.toNamed(AppRoutes.stockhistory);
+                        },
                       ),
                     ),
                   ],
@@ -434,76 +436,81 @@ class Dashboard extends GetView<DashCntrl> {
     Widget placeholder() =>
         const Icon(Icons.image_not_supported_outlined, color: _muted, size: 26);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: _cardDecoration(),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: 64,
-              height: 64,
-              color: Colors.grey.shade100,
-              child: image.isEmpty
-                  ? placeholder()
-                  : Image.network(
-                      image,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stack) => placeholder(),
-                    ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  (d['itemName'] ?? 'Unnamed').toString(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: _ink,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  (d['category'] ?? '-').toString(),
-                  style: const TextStyle(color: _muted, fontSize: 13),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Qty: $qty",
-                  style: const TextStyle(
-                    color: _muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              low ? "Low Stock" : "In Stock",
-              style: TextStyle(
-                color: statusColor,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
+    return InkWell(
+      onTap: () {
+        Get.toNamed(AppRoutes.dashListDetail, arguments: d);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: _cardDecoration(),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: 64,
+                height: 64,
+                color: Colors.grey.shade100,
+                child: image.isEmpty
+                    ? placeholder()
+                    : Image.network(
+                        image,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stack) => placeholder(),
+                      ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (d['itemName'] ?? 'Unnamed').toString(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _ink,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    (d['category'] ?? '-').toString(),
+                    style: const TextStyle(color: _muted, fontSize: 13),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Qty: $qty",
+                    style: const TextStyle(
+                      color: _muted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                low ? "Low Stock" : "In Stock",
+                style: TextStyle(
+                  color: statusColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

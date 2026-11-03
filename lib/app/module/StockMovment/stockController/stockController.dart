@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/app/core/model/receivingModel.dart';
 import 'package:flutter_application_1/app/module/StockMovment/scanner/outScanner.dart';
+import 'package:flutter_application_1/app/routes/appPage/appPage.dart';
 import 'package:get/get.dart';
 
 class Stockcnt extends GetxController {
@@ -169,6 +170,9 @@ class Stockcnt extends GetxController {
         return;
       }
 
+      /////////////////////////////////////////
+      ///
+
       // --------------------------------
       // ITEM FOUND
       // --------------------------------
@@ -219,6 +223,21 @@ class Stockcnt extends GetxController {
     final price = scannedItem.value?.price ?? 0.0;
 
     totalValue.value = qty * price;
+  }
+
+  Future<void> deleteDate() async {
+    final barcode = barcodeSn.text.trim();
+    final result = await FirebaseFirestore.instance
+        .collection("recivedItems")
+        .where("barcode", isEqualTo: barcode)
+        .limit(1)
+        .get();
+    print("Documents found: ${result.docs.length}");
+
+    if (result.docs.isNotEmpty) {
+      await result.docs.first.reference.delete();
+      Get.toNamed(AppRoutes.dashboard);
+    }
   }
 
   // --------------------------------
